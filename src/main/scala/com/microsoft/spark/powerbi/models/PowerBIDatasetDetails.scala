@@ -17,10 +17,13 @@
 
 package com.microsoft.spark.powerbi.models
 
-case class PowerBIDatasetDetails(id: String, name: String)
+import com.microsoft.spark.powerbi.common.PowerBIOptions
+
+case class PowerBIDatasetDetails(id: String, name: String,
+                                 defaultRetentionPolicy: String = PowerBIOptions.None.toString())
 case class PowerBIDatasetDetailsList(value: List[PowerBIDatasetDetails])
 
-case class PowerBITableDetails(id: String, name: String)
+case class PowerBITableDetails(name: String)
 case class PowerBITableDetailsList(value: List[PowerBITableDetails])
 
 case class PowerBIGroupDetails(id: String, name: String)
@@ -31,3 +34,6 @@ case class PowerBIDashboardDetailsList(value: List[PowerBIDashboardDetails])
 
 case class PowerBITileDetails(id: String, title: String, embedUrl: String)
 case class PowerBITileDetailsList(value: List[PowerBITileDetails])
+
+case class PowerBIReportDetails(id: String, name: String, webUrl: String, embedUrl: String)
+case class PowerBIReportDetailsList(value: List[PowerBIReportDetails])

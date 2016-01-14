@@ -25,5 +25,6 @@ object PowerBIURLs {
   val Groups = "https://api.powerbi.com/v1.0/myorg/groups"
   val DashboardsBeta = "https://api.powerbi.com/beta/myorg/dashboards"
   val GroupsBeta = "https://api.powerbi.com/beta/myorg/groups"
+  val ReportsBeta = "https://api.powerbi.com/beta/myorg/reports"
 
 }

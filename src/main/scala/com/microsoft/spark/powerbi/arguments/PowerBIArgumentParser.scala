@@ -17,6 +17,8 @@
 
 package com.microsoft.spark.powerbi.connector
 
+import com.microsoft.spark.powerbi.common.PowerBIURLs
+
 object PowerBIArgumentParser {
 
   type ArgumentMap = Map[Symbol, Any]
@@ -31,8 +33,8 @@ object PowerBIArgumentParser {
 
     println()
     println(s"Usage: java -cp SparkPowerBIConnector.jar com.microsoft.spark.powerbi.connector.PowerBIConnector" +
-      s" --powerbi-authority-url '$powerBIAutorityURLExample' --powerbi-resource-url '$powerBIResourceURLExample'" +
-      s" --powerbi-client-id '$powerBIClientIDExample' --powerbi-username '$powerBIUsernameExample'" +
+      s" [--powerbi-authority-url '$powerBIAutorityURLExample'] [--powerbi-resource-url '$powerBIResourceURLExample']" +
+      s" --powerbi-clients-id '$powerBIClientIDExample' --powerbi-username '$powerBIUsernameExample'" +
       s" --powerbi-password $powerBIPasswordExample")
     println()
   }
@@ -58,6 +60,22 @@ object PowerBIArgumentParser {
         usageExample()
         sys.exit(1)
     }
+  }
+
+  def updateArguments(argumentMap : ArgumentMap): ArgumentMap = {
+
+    if (!argumentMap.contains(Symbol(PowerBIArgumentKeys.PowerBIAuthorityURL))) {
+
+      return updateArguments(argumentMap ++ Map(Symbol(PowerBIArgumentKeys.PowerBIAuthorityURL) -> PowerBIURLs.Authority))
+    }
+
+    if (!argumentMap.contains(Symbol(PowerBIArgumentKeys.PowerBIResourceURL))) {
+
+      return updateArguments(argumentMap ++ Map(Symbol(PowerBIArgumentKeys.PowerBIResourceURL) -> PowerBIURLs.Resource))
+    }
+
+    argumentMap
+
   }
 
   def verifyArguments(argumentMap : ArgumentMap): Unit = {
