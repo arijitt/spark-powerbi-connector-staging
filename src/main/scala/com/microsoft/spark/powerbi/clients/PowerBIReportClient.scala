@@ -30,7 +30,7 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
 
 object PowerBIReportClient {
 
-  def get(authenticationToken: String, dashboardId: String, groupId: String = null): PowerBIReportDetailsList = {
+  def get(dashboardId: String, authenticationToken: String, groupId: String = null): PowerBIReportDetailsList = {
 
     implicit val formats = Serialization.formats(
       ShortTypeHints(

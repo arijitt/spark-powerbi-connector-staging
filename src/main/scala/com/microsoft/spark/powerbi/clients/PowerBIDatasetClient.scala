@@ -33,9 +33,8 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
 
 object PowerBIDatasetClient {
 
-  def create(authenticationToken: String, powerBIDataset: PowerBIDataset, groupId: String = null,
-             retentionPolicy: PowerBIOptions.DatasetRetentionPolicy
-             = PowerBIOptions.Undefined): PowerBIDatasetDetails = {
+  def create(powerBIDataset: PowerBIDataset, retentionPolicy: PowerBIOptions.DatasetRetentionPolicy
+             = PowerBIOptions.Undefined, authenticationToken: String, groupId: String = null): PowerBIDatasetDetails = {
 
     implicit val formats = Serialization.formats(
       ShortTypeHints(

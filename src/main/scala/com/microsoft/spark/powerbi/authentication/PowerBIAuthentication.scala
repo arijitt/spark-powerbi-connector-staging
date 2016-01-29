@@ -22,7 +22,7 @@ import javax.naming.ServiceUnavailableException
 
 import com.microsoft.aad.adal4j.{AuthenticationContext, AuthenticationResult}
 
-case class PowerBIAuthentication(
+ case class PowerBIAuthentication(
                                   powerBIAuthorityURL: String,
                                   powerBIResourceURL: String,
                                   powerBIClientID: String,
@@ -30,33 +30,44 @@ case class PowerBIAuthentication(
                                   powerBIPassword: String
                                 ) {
 
-  def getAccessToken(): String = {
+   def getAccessToken(): String = {
 
-    var authenticationResult: AuthenticationResult = null
-    var executorService: ExecutorService = null
-
-    try {
-
-      executorService = Executors.newFixedThreadPool(1)
-
-      val authenticationContext: AuthenticationContext = new AuthenticationContext(powerBIAuthorityURL,
-        true, executorService)
-
-      val authenticationResultFuture: Future[AuthenticationResult] = authenticationContext.acquireToken(
-        powerBIResourceURL, powerBIClientID, powerBIUsername, powerBIPassword, null)
-
-      authenticationResult = authenticationResultFuture.get()
-    }
-    finally
-    {
-      executorService.shutdown()
-    }
-
-    if (authenticationResult == null) {
-
-      throw new ServiceUnavailableException("Authentication result empty")
-    }
-
-    authenticationResult.getAccessToken()
+     getToken().getAccessToken()
   }
+
+   def refreshAccessToken(): String = {
+
+     getToken().getRefreshToken()
+   }
+
+   private def getToken(): AuthenticationResult ={
+
+     var authenticationResult: AuthenticationResult = null
+
+     var executorService: ExecutorService = null
+
+     try {
+
+       executorService = Executors.newFixedThreadPool(1)
+
+       val authenticationContext: AuthenticationContext = new AuthenticationContext(powerBIAuthorityURL,
+         true, executorService)
+
+       val authenticationResultFuture: Future[AuthenticationResult] = authenticationContext.acquireToken(
+         powerBIResourceURL, powerBIClientID, powerBIUsername, powerBIPassword, null)
+
+       authenticationResult = authenticationResultFuture.get()
+     }
+     finally
+     {
+       executorService.shutdown()
+     }
+
+     if (authenticationResult == null) {
+
+       throw new ServiceUnavailableException("Authentication result empty")
+     }
+
+     authenticationResult
+   }
 }

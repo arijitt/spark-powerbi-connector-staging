@@ -31,8 +31,8 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
 
 object PowerBIRowClient {
 
-  def add(authenticationToken: String, powerBIRows: PowerBIRows, tableName: String,
-          datasetId: String, groupId: String = null): String = {
+  def add(powerBIRows: PowerBIRows, tableName: String, datasetId: String, authenticationToken: String,
+          groupId: String = null): String = {
 
     implicit val formats = Serialization.formats(
       ShortTypeHints(
@@ -84,7 +84,7 @@ object PowerBIRowClient {
     throw new PowerBIClientException(statusCode, responseContent)
   }
 
-  def delete(authenticationToken: String, tableName: String, datasetId: String, groupId: String = null): String = {
+  def delete(tableName: String, datasetId: String, authenticationToken: String, groupId: String = null): String = {
 
     implicit val formats = Serialization.formats(
       ShortTypeHints(

@@ -30,7 +30,7 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
 
 object PowerBITileClient {
 
-  def get(authenticationToken: String, dashboardId: String, groupId: String = null): PowerBITileDetailsList = {
+  def get(dashboardId: String, authenticationToken: String, groupId: String = null): PowerBITileDetailsList = {
 
     implicit val formats = Serialization.formats(
       ShortTypeHints(

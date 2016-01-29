@@ -31,7 +31,7 @@ import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
 
 object PowerBITableClient {
 
-  def get(authenticationToken: String, datasetId: String, groupId: String = null): PowerBITableDetailsList = {
+  def get(datasetId: String, authenticationToken: String, groupId: String = null): PowerBITableDetailsList = {
 
     var getRequestURL: String = null
 
@@ -80,7 +80,7 @@ object PowerBITableClient {
     throw new PowerBIClientException(statusCode, responseContent)
   }
 
-  def updateSchema(authenticationToken: String, powerBITable: table, datasetId: String,
+  def updateSchema(powerBITable: table, datasetId: String, authenticationToken: String,
                    groupId: String = null): PowerBITableDetails = {
 
     implicit val formats = Serialization.formats(

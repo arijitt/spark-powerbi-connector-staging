@@ -15,12 +15,10 @@
  * limitations under the License.
  */
 
-package com.microsoft.spark.powerbi.connector
+package com.microsoft.spark.powerbi.common
 
-object PowerBIArgumentKeys extends Enumeration {
-  val PowerBIAuthorityURL: String = "powerBIAuthorityURL"
-  val PowerBIResourceURL: String = "powerBIResourceURL"
-  val PowerBIClientID: String = "powerBIClientID"
-  val PowerBIUsername: String = "powerBIUsername"
-  val PowerBIPassword: String = "powerBIPassword"
+object PowerBIDataTypes extends Enumeration {
+
+  val Boolean, String, Int64, Double, DateTime = Value
+
 }
