@@ -29,8 +29,6 @@ import com.microsoft.spark.powerbi.exceptions._
 
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
 
-//case class GetResponse(context: String, id: String, name: String, defaultRetentionPolicy: String)
-
 object PowerBIDatasetClient {
 
   def create(powerBIDataset: PowerBIDataset, retentionPolicy: PowerBIOptions.DatasetRetentionPolicy

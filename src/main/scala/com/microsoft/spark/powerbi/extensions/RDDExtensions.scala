@@ -19,27 +19,56 @@ package com.microsoft.spark.powerbi.extensions
 
 import java.sql.{Timestamp}
 import java.util.Date
+import java.lang.reflect.Field
+
+import scala.reflect._
+import scala.reflect.runtime.{universe => runtimeUniverse}
+import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ListBuffer
-import org.apache.spark.sql.DataFrame
 
 import com.microsoft.spark.powerbi.authentication.PowerBIAuthentication
 import com.microsoft.spark.powerbi.models.{table, PowerBIDatasetDetails}
 import com.microsoft.spark.powerbi.common.PowerBIUtils
 
-object DataFrameExtensions {
+object RDDExtensions {
 
-  implicit def PowerBIDataFrame(dataFrame: DataFrame): PowerBIDataFrame = new PowerBIDataFrame(dataFrame: DataFrame)
+  implicit def PowerBIRDD[A: runtimeUniverse.TypeTag](rdd: RDD[A]): PowerBIRDD[A] = new PowerBIRDD(rdd: RDD[A])
 
-  class PowerBIDataFrame(dataFrame: DataFrame) {
+  class PowerBIRDD[A: runtimeUniverse.TypeTag](rdd: RDD[A]) {
+
+    def getFieldValueMap[A: runtimeUniverse.TypeTag](anyObject: A)
+                                                            (implicit classTag: ClassTag[A]): Map[String, Any] = {
+
+      var fieldValueMap: Map[String, Any] = Map[String, Any]()
+
+      val objectFields: Array[Field] = anyObject.getClass().getDeclaredFields()
+
+      objectFields.foreach(objectField => {
+
+        val nameSymbol = runtimeUniverse.typeOf[A]
+          .declaration(runtimeUniverse.stringToTermName(objectField.getName)).asTerm
+
+        val typeMirror = runtimeUniverse.runtimeMirror(anyObject.getClass.getClassLoader)
+
+        val instanceMirror = typeMirror.reflect[A](anyObject)(classTag)
+
+        val fieldMirror = instanceMirror.reflectField(nameSymbol)
+
+        fieldValueMap += (objectField.getName -> fieldMirror.get)
+
+      })
+
+      fieldValueMap
+    }
 
     def countToPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
                        powerBIAuthentication: PowerBIAuthentication): Unit = {
 
       val currentTimestamp = new Timestamp(new Date().getTime())
 
-      val  powerbiRow = Map(powerbiTable.columns(0).name -> currentTimestamp,
-        powerbiTable.columns(1).name -> dataFrame.count())
+      val powerbiRow = Map(powerbiTable.columns(0).name -> currentTimestamp,
+        powerbiTable.columns(1).name -> rdd.count())
 
       try {
 
@@ -52,11 +81,11 @@ object DataFrameExtensions {
     }
 
     def toPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
-                  powerBIAuthentication: PowerBIAuthentication): Unit = {
+                  powerBIAuthentication: PowerBIAuthentication)(implicit classTag: ClassTag[A]): Unit = {
 
       var authenticationToken: String = powerBIAuthentication.getAccessToken()
 
-      dataFrame.foreachPartition { partition =>
+      rdd.foreachPartition { partition =>
 
         //PowerBI row limit in single request is 10,000. We limit it to 1000.
 
@@ -70,20 +99,13 @@ object DataFrameExtensions {
 
               record => {
 
-                var powerbiRow: Map[String, Any] = Map[String, Any]()
-
-                for (i <- 0 to record.length) {
-
-                  powerbiRow += (dataFrame.columns(i) -> record(i))
-                }
-
-                powerbiRowList += powerbiRow
+                powerbiRowList += getFieldValueMap(record)
               }
 
               try {
 
                 PowerBIUtils.addMultipleRows(powerbiDatasetDetails, powerbiTable, powerbiRowList.toList,
-                  authenticationToken)
+                    authenticationToken)
               }
               catch {
 

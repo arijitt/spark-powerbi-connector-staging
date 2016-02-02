@@ -17,8 +17,10 @@
 
 package com.microsoft.spark.powerbi.common
 
-import com.microsoft.spark.powerbi.clients.{PowerBIRowClient, PowerBIDatasetClient}
+import com.microsoft.spark.powerbi.clients._
 import com.microsoft.spark.powerbi.models._
+import com.microsoft.spark.powerbi.exceptions._
+
 import scala.collection.mutable.ListBuffer
 
 object PowerBIUtils {
@@ -46,11 +48,41 @@ object PowerBIUtils {
     powerbiDatasetDetails
   }
 
-  def getOrCreateDataset(powerbiDatasetName: String, authenticationToken: String, groupId: String = null): Unit = {
+  def getDataset(powerbiDatasetName: String, authenticationToken: String, groupId: String = null)
+  : PowerBIDatasetDetails = {
 
     val powerbiDatasetDetailsList: PowerBIDatasetDetailsList = PowerBIDatasetClient.get(authenticationToken, groupId)
 
-    powerbiDatasetDetailsList.value.find(x => x.name.equalsIgnoreCase(powerbiDatasetName))
+    powerbiDatasetDetailsList.value.find(x => x.name.equalsIgnoreCase(powerbiDatasetName)).getOrElse(null)
+  }
+
+  def getOrCreateDataset(powerbiDatasetName: String, powerbiTables: List[table],
+                         retentionPolicy: PowerBIOptions.DatasetRetentionPolicy = PowerBIOptions.basicFIFO,
+                         authenticationToken: String, groupId: String = null): PowerBIDatasetDetails = {
+
+
+    val powerbiDatasetDetails: PowerBIDatasetDetails = getDataset(powerbiDatasetName, authenticationToken, groupId)
+
+    //Check for existing tables by name, schema is not checked
+
+    if (powerbiDatasetDetails != null) {
+
+      val powerbiTableDetailsList: PowerBITableDetailsList = PowerBITableClient.get(powerbiDatasetDetails.id,
+        authenticationToken, groupId)
+
+      powerbiTables.foreach(powerbiTable => {
+
+        if (powerbiTableDetailsList.value.find(powerbiTableDetails
+        => powerbiDatasetDetails.name.equalsIgnoreCase(powerbiTable.name)).getOrElse(null) == null) {
+
+          throw new PowerBIClientException(-1, powerbiTable.name + " not found in dataset " + powerbiDatasetDetails.name)
+        }
+      })
+
+      return powerbiDatasetDetails
+    }
+
+    createDataset(powerbiDatasetName, powerbiTables, retentionPolicy, authenticationToken, groupId)
   }
 
   def addRow(powerbiDatasetDetails: PowerBIDatasetDetails,  powerbiTable: table, columnNameValueMap: Map[String, Any],
