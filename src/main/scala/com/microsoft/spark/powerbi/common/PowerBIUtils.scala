@@ -56,6 +56,7 @@ object PowerBIUtils {
     powerbiDatasetDetailsList.value.find(x => x.name.equalsIgnoreCase(powerbiDatasetName)).getOrElse(null)
   }
 
+
   def getOrCreateDataset(powerbiDatasetName: String, powerbiTables: List[table],
                          retentionPolicy: PowerBIOptions.DatasetRetentionPolicy = PowerBIOptions.basicFIFO,
                          authenticationToken: String, groupId: String = null): PowerBIDatasetDetails = {
@@ -72,10 +73,15 @@ object PowerBIUtils {
 
       powerbiTables.foreach(powerbiTable => {
 
-        if (powerbiTableDetailsList.value.find(powerbiTableDetails
-        => powerbiDatasetDetails.name.equalsIgnoreCase(powerbiTable.name)).getOrElse(null) == null) {
+        println("Examining table: " + powerbiTable.name)
+
+        val powerbiTableDetails  = powerbiTableDetailsList.value.find(x => x.name.equalsIgnoreCase(powerbiTable.name))
+          .getOrElse(null)
+
+        if (powerbiTableDetails == null) {
 
           throw new PowerBIClientException(-1, powerbiTable.name + " not found in dataset " + powerbiDatasetDetails.name)
+
         }
       })
 

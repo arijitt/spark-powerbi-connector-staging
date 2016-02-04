@@ -18,6 +18,7 @@
 package com.microsoft.spark.powerbi.extensions
 
 import com.microsoft.spark.powerbi.authentication.PowerBIAuthentication
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.streaming.dstream.DStream
 
 import com.microsoft.spark.powerbi.models.{table, PowerBIDatasetDetails}
@@ -27,6 +28,35 @@ import scala.reflect.runtime.{universe => runtimeUniverse}
 
 object DStreamExtensions {
 
+  implicit def PowerBIDStream[A <: Product: runtimeUniverse.TypeTag](dStream: DStream[A]): PowerBIDStream[A]
+  = new PowerBIDStream(dStream: DStream[A])
+
+  class PowerBIDStream[A <: Product: runtimeUniverse.TypeTag](dStream: DStream[A]) {
+
+    def countToPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
+                       powerBIAuthentication: PowerBIAuthentication)(implicit classTag: ClassTag[A]): Unit = {
+
+      import com.microsoft.spark.powerbi.extensions.DataFrameExtensions._
+
+      val sqlContext = new SQLContext(dStream.context.sparkContext)
+
+      dStream.foreachRDD{rdd => sqlContext.createDataFrame[A](rdd)
+        .countToPowerBI(powerbiDatasetDetails, powerbiTable, powerBIAuthentication)}
+    }
+
+    def toPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
+                  powerBIAuthentication: PowerBIAuthentication)(implicit classTag: ClassTag[A]): Unit = {
+
+      import com.microsoft.spark.powerbi.extensions.DataFrameExtensions._
+
+      val sqlContext = new SQLContext(dStream.context.sparkContext)
+
+      dStream.foreachRDD{rdd => sqlContext.createDataFrame[A](rdd)
+        .toPowerBI(powerbiDatasetDetails, powerbiTable, powerBIAuthentication)}
+    }
+  }
+
+  /*
   implicit def PowerBIDStream[A: runtimeUniverse.TypeTag](dStream: DStream[A]): PowerBIDStream[A]
   = new PowerBIDStream(dStream: DStream[A])
 
@@ -48,6 +78,7 @@ object DStreamExtensions {
       dStream.foreachRDD(r => r.toPowerBI(powerbiDatasetDetails, powerbiTable, powerBIAuthentication))
     }
   }
+  */
 }
 
 

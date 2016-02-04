@@ -17,10 +17,7 @@
 
 package com.microsoft.spark.powerbi.models
 
-import com.microsoft.spark.powerbi.common.PowerBIOptions
-
-case class PowerBIDatasetDetails(id: String, name: String,
-                                 defaultRetentionPolicy: String = PowerBIOptions.None.toString())
+case class PowerBIDatasetDetails(id: String, name: String)
 case class PowerBIDatasetDetailsList(value: List[PowerBIDatasetDetails])
 
 case class PowerBITableDetails(name: String)
