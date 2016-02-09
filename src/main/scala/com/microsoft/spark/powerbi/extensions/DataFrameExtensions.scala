@@ -31,9 +31,9 @@ object DataFrameExtensions {
 
   implicit def PowerBIDataFrame(dataFrame: DataFrame): PowerBIDataFrame = new PowerBIDataFrame(dataFrame: DataFrame)
 
-  class PowerBIDataFrame(dataFrame: DataFrame) {
+  class PowerBIDataFrame(dataFrame: DataFrame) extends Serializable{
 
-    def countToPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
+    def countTimelineToPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
                        powerBIAuthentication: PowerBIAuthentication): Unit = {
 
       val currentTimestamp = new Timestamp(new Date().getTime())

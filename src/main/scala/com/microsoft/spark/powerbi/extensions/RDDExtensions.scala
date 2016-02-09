@@ -31,11 +31,12 @@ import com.microsoft.spark.powerbi.authentication.PowerBIAuthentication
 import com.microsoft.spark.powerbi.models.{table, PowerBIDatasetDetails}
 import com.microsoft.spark.powerbi.common.PowerBIUtils
 
+
 object RDDExtensions {
 
   implicit def PowerBIRDD[A: runtimeUniverse.TypeTag](rdd: RDD[A]): PowerBIRDD[A] = new PowerBIRDD(rdd: RDD[A])
 
-  class PowerBIRDD[A: runtimeUniverse.TypeTag](rdd: RDD[A]) {
+  class PowerBIRDD[A: runtimeUniverse.TypeTag](rdd: RDD[A]) extends Serializable{
 
     def getFieldValueMap[A: runtimeUniverse.TypeTag](anyObject: A)
                                                             (implicit classTag: ClassTag[A]): Map[String, Any] = {
@@ -62,7 +63,7 @@ object RDDExtensions {
       fieldValueMap
     }
 
-    def countToPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
+    def countTimelineToPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
                        powerBIAuthentication: PowerBIAuthentication): Unit = {
 
       val currentTimestamp = new Timestamp(new Date().getTime())

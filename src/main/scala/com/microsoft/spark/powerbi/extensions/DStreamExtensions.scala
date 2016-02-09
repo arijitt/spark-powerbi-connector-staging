@@ -17,70 +17,123 @@
 
 package com.microsoft.spark.powerbi.extensions
 
+import java.lang.reflect.Field
+import java.sql.Timestamp
+import java.util.Date
+
 import com.microsoft.spark.powerbi.authentication.PowerBIAuthentication
-import org.apache.spark.sql.SQLContext
+import com.microsoft.spark.powerbi.common.PowerBIUtils
 import org.apache.spark.streaming.dstream.DStream
 
 import com.microsoft.spark.powerbi.models.{table, PowerBIDatasetDetails}
-
+import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{universe => runtimeUniverse}
 
 object DStreamExtensions {
 
-  implicit def PowerBIDStream[A <: Product: runtimeUniverse.TypeTag](dStream: DStream[A]): PowerBIDStream[A]
-  = new PowerBIDStream(dStream: DStream[A])
-
-  class PowerBIDStream[A <: Product: runtimeUniverse.TypeTag](dStream: DStream[A]) {
-
-    def countToPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
-                       powerBIAuthentication: PowerBIAuthentication)(implicit classTag: ClassTag[A]): Unit = {
-
-      import com.microsoft.spark.powerbi.extensions.DataFrameExtensions._
-
-      val sqlContext = new SQLContext(dStream.context.sparkContext)
-
-      dStream.foreachRDD{rdd => sqlContext.createDataFrame[A](rdd)
-        .countToPowerBI(powerbiDatasetDetails, powerbiTable, powerBIAuthentication)}
-    }
-
-    def toPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
-                  powerBIAuthentication: PowerBIAuthentication)(implicit classTag: ClassTag[A]): Unit = {
-
-      import com.microsoft.spark.powerbi.extensions.DataFrameExtensions._
-
-      val sqlContext = new SQLContext(dStream.context.sparkContext)
-
-      dStream.foreachRDD{rdd => sqlContext.createDataFrame[A](rdd)
-        .toPowerBI(powerbiDatasetDetails, powerbiTable, powerBIAuthentication)}
-    }
-  }
-
-  /*
   implicit def PowerBIDStream[A: runtimeUniverse.TypeTag](dStream: DStream[A]): PowerBIDStream[A]
   = new PowerBIDStream(dStream: DStream[A])
 
-  class PowerBIDStream[A: runtimeUniverse.TypeTag](dStream: DStream[A]) {
+  class PowerBIDStream[A: runtimeUniverse.TypeTag](dStream: DStream[A]) extends Serializable {
 
-    def countToPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
+    def getFieldValueMap[A: runtimeUniverse.TypeTag](anyObject: A)
+                                                    (implicit classTag: ClassTag[A]): Map[String, Any] = {
+
+      var fieldValueMap: Map[String, Any] = Map[String, Any]()
+
+      val objectFields: Array[Field] = anyObject.getClass().getDeclaredFields()
+
+      objectFields.foreach(objectField => {
+
+        val nameSymbol = runtimeUniverse.typeOf[A]
+          .declaration(runtimeUniverse.stringToTermName(objectField.getName)).asTerm
+
+        val typeMirror = runtimeUniverse.runtimeMirror(anyObject.getClass.getClassLoader)
+
+        val instanceMirror = typeMirror.reflect[A](anyObject)(classTag)
+
+        val fieldMirror = instanceMirror.reflectField(nameSymbol)
+
+        fieldValueMap += (objectField.getName -> fieldMirror.get)
+
+      })
+
+      fieldValueMap
+    }
+
+    def countTimelineToPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
                        powerBIAuthentication: PowerBIAuthentication): Unit = {
 
-      import com.microsoft.spark.powerbi.extensions.RDDExtensions._
+      dStream.foreachRDD {
 
-      dStream.foreachRDD(r => r.countToPowerBI(powerbiDatasetDetails, powerbiTable, powerBIAuthentication))
+        rdd => {
+
+          val currentTimestamp = new Timestamp(new Date().getTime())
+
+          val powerbiRow = Map(powerbiTable.columns(0).name -> currentTimestamp,
+            powerbiTable.columns(1).name -> rdd.count())
+
+          try {
+
+            PowerBIUtils.addRow(powerbiDatasetDetails, powerbiTable, powerbiRow, powerBIAuthentication.getAccessToken())
+          }
+          catch {
+
+            case e: Exception => println("Exception inserting row: " + e.getMessage())
+          }
+        }
+      }
     }
 
     def toPowerBI(powerbiDatasetDetails: PowerBIDatasetDetails, powerbiTable: table,
                   powerBIAuthentication: PowerBIAuthentication)(implicit classTag: ClassTag[A]): Unit = {
 
-      import com.microsoft.spark.powerbi.extensions.RDDExtensions._
+      var authenticationToken: String = powerBIAuthentication.getAccessToken()
 
-      dStream.foreachRDD(r => r.toPowerBI(powerbiDatasetDetails, powerbiTable, powerBIAuthentication))
+      dStream.foreachRDD {
+
+        rdd => {
+
+          rdd.foreachPartition { partition =>
+
+            //PowerBI row limit in single request is 10,000. We limit it to 1000.
+
+            partition.grouped(1000).foreach {
+
+              group => {
+
+                val powerbiRowList: ListBuffer[Map[String, Any]] = ListBuffer[Map[String, Any]]()
+
+                group.foreach {
+
+                  record => {
+
+                    powerbiRowList += getFieldValueMap(record)
+                  }
+
+                  try {
+
+                    PowerBIUtils.addMultipleRows(powerbiDatasetDetails, powerbiTable, powerbiRowList.toList,
+                      authenticationToken)
+                  }
+                  catch {
+
+                    case e: Exception => {
+
+                      println("Exception inserting multiple rows: " + e.getMessage())
+
+                      authenticationToken = powerBIAuthentication.refreshAccessToken()
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
-  */
 }
-
-
 
 
