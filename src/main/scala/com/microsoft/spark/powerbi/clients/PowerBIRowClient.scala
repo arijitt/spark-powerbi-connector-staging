@@ -58,7 +58,7 @@ object PowerBIRowClient {
 
     postRequest.setEntity(new StringEntity(write(powerBIRows)))
 
-    val httpClient : CloseableHttpClient = HttpClientBuilder.create().build()
+    val httpClient : CloseableHttpClient = HttpClientUtils.getCustomHttpClient()
 
     val httpResponse = httpClient.execute(postRequest)
     val statusCode: Int = httpResponse.getStatusLine().getStatusCode()
@@ -107,7 +107,7 @@ object PowerBIRowClient {
 
     deleteRequest.addHeader("Authorization", f"Bearer $authenticationToken")
 
-    val httpClient : CloseableHttpClient = HttpClientBuilder.create().build()
+    val httpClient : CloseableHttpClient = HttpClientUtils.getCustomHttpClient()
 
     val httpResponse = httpClient.execute(deleteRequest)
     val statusCode: Int = httpResponse.getStatusLine().getStatusCode()

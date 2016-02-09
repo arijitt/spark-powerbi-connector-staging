@@ -42,7 +42,7 @@ object PowerBIGroupClient {
 
     getRequest.addHeader("Authorization", f"Bearer $authenticationToken")
 
-    val httpClient: CloseableHttpClient = HttpClientBuilder.create().build()
+    val httpClient: CloseableHttpClient = HttpClientUtils.getCustomHttpClient()
 
     val httpResponse = httpClient.execute(getRequest)
     val statusCode: Int = httpResponse.getStatusLine().getStatusCode()
