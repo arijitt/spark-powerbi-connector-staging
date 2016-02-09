@@ -80,8 +80,9 @@ object PowerBIUtils {
 
         if (powerbiTableDetails == null) {
 
-          throw new PowerBIClientException(-1, powerbiTable.name + " not found in dataset " + powerbiDatasetDetails.name)
+          val exceptionMessage = powerbiTable.name + " not found in dataset " + powerbiDatasetDetails.name
 
+          throw new PowerBIClientException(-1, null, exceptionMessage)
         }
       })
 

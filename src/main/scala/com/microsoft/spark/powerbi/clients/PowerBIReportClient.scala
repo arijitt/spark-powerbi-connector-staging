@@ -55,27 +55,37 @@ object PowerBIReportClient {
 
     val httpClient: CloseableHttpClient = HttpClientUtils.getCustomHttpClient()
 
-    val httpResponse = httpClient.execute(getRequest)
-    val statusCode: Int = httpResponse.getStatusLine().getStatusCode()
-
-    val responseEntity = httpResponse.getEntity()
-
     var responseContent: String = null
+    var statusCode: Int = -1
+    var exceptionMessage: String = null
 
-    if (responseEntity != null) {
+    try {
+      val httpResponse = httpClient.execute(getRequest)
+      statusCode = httpResponse.getStatusLine().getStatusCode()
 
-      val inputStream = responseEntity.getContent()
-      responseContent = scala.io.Source.fromInputStream(inputStream).getLines.mkString
-      inputStream.close
+      val responseEntity = httpResponse.getEntity()
+
+      if (responseEntity != null) {
+
+        val inputStream = responseEntity.getContent()
+        responseContent = scala.io.Source.fromInputStream(inputStream).getLines.mkString
+        inputStream.close
+      }
     }
+    catch {
 
-    httpClient.close()
+      case e: Exception => exceptionMessage = e.getMessage
+    }
+    finally {
+
+      httpClient.close()
+    }
 
     if (statusCode == 200) {
 
       return read[PowerBIReportDetailsList](responseContent)
     }
 
-    throw new PowerBIClientException(statusCode, responseContent)
+    throw new PowerBIClientException(statusCode, responseContent, exceptionMessage)
   }
 }
